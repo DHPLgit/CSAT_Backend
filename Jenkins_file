@@ -1,0 +1,68 @@
+pipeline {
+    agent any
+    environment {
+        SONAR_PROJECT_KEY = 'React.js'
+        GITHUB_REPO = 'https://github.com/DHPLgit/CSAT_Frontend.git'
+        SONAR_HOST_URL = 'http://34.213.46.217:9000'
+        SONAR_TOKEN = credentials('Sonar_Token') // Replace with the ID of your SonarQube token
+        TARGET_SERVER = 'ec2-user@ec2-35-91-75-215.us-west-2.compute.amazonaws.com'
+        TARGET_PATH = '/var/www/html/deploy/'
+        SSH_KEY_PATH = '/var/jenkins_home/.ssh/id_rsa'
+        ZIP_FILE_NAME = 'csat.zip'
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                echo 'Checking out code from GitHub...'
+                git branch: 'main', url: "${GITHUB_REPO}"
+            }
+        }
+
+        stage('Archive and Transfer Zip File') {
+            steps {
+                timeout(time: 15, unit: 'MINUTES') {
+                    script {
+                        // Ensure the src folder exists
+                        echo "Archiving source folder into ${ZIP_FILE_NAME}..."
+                        sh """
+                            if [ ! -d csat ]; then
+                                echo "Error: Directory 'csat/' not found!" >&2
+                                exit 1
+                            fi
+                            zip -r ${ZIP_FILE_NAME} csat/
+                        """
+
+                        echo "Transferring ${ZIP_FILE_NAME} to the target server..."
+                        sh """
+                            scp -v -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no ${ZIP_FILE_NAME} ${TARGET_SERVER}:${TARGET_PATH}
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Extract File on Target Server') {
+            steps {
+                timeout(time: 15, unit: 'MINUTES') {
+                    script {
+                        echo "Extracting ${ZIP_FILE_NAME} on the target server..."
+                        sh """
+                            ssh -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no ${TARGET_SERVER} \
+                            'unzip -o ${TARGET_PATH}/${ZIP_FILE_NAME} -d ${TARGET_PATH} && rm -f ${TARGET_PATH}/${ZIP_FILE_NAME}'
+                        """
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Pipeline execution completed!'
+        }
+        failure {
+            echo 'Pipeline failed. Check the logs for details.'
+        }
+    }
+}
