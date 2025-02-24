@@ -9,6 +9,7 @@ pipeline {
         TARGET_PATH = '/var/www/html/deploy/'
         SSH_KEY_PATH = '/var/jenkins_home/.ssh/id_rsa'
         ZIP_FILE_NAME = 'csat-be.zip'
+        BACKUP_DIR = '/var/www/html/'
     }
 
     stages {
