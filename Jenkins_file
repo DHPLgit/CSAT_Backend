@@ -19,6 +19,20 @@ pipeline {
             }
         }
 
+        stage('Backup Existing Files on Server') {
+    steps {
+        script {
+            echo "Creating a backup of the existing deployment..."
+            sh """
+                ssh -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no ${TARGET_SERVER} \
+                'mkdir -p /var/www/html/backup && \
+                TIMESTAMP=\$(date +"%Y%m%d%H%M%S") && \
+                cp -r /var/www/html/csat /var/www/html/backup/csat_backup_\$TIMESTAMP'
+            """
+        }
+    }
+}
+
         stage('Archive and Transfer Zip File') {
             steps {
                 timeout(time: 15, unit: 'MINUTES') {
