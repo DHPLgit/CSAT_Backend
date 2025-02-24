@@ -28,7 +28,7 @@ pipeline {
                 ssh -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no ${TARGET_SERVER} \
                 'mkdir -p /var/www/html/backup && \
                 TIMESTAMP=\$(date +"%Y%m%d%H%M%S") && \
-                cp -r /var/www/html/csat-be /var/www/html/backup/csat_backup_\$TIMESTAMP'
+                cp -r /var/www/html/csat-be /var/www/html/backup/csat_backup_be_\$TIMESTAMP'
             """
         }
     }
